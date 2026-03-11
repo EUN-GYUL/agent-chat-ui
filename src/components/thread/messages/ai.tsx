@@ -14,6 +14,7 @@ import { ThreadView } from "../agent-inbox";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
 import { useArtifact } from "../artifact";
+import { CUSTOM_COMPONENTS } from "@/components/custom";
 
 function CustomComponent({
   message,
@@ -24,8 +25,14 @@ function CustomComponent({
 }) {
   const artifact = useArtifact();
   const { values } = useStreamContext();
+  // Match UI messages by message_id, or fallback: show unassociated UI messages
+  // on the last AI message (push_ui_message may not always set message_id)
+  const isLastAiMessage =
+    thread.messages.filter((m) => m.type === "ai").at(-1)?.id === message.id;
   const customComponents = values.ui?.filter(
-    (ui) => ui.metadata?.message_id === message.id,
+    (ui) =>
+      ui.metadata?.message_id === message.id ||
+      (!ui.metadata?.message_id && isLastAiMessage),
   );
 
   if (!customComponents?.length) return null;
@@ -37,6 +44,7 @@ function CustomComponent({
           stream={thread}
           message={customComponent}
           meta={{ ui: customComponent, artifact }}
+          components={CUSTOM_COMPONENTS}
         />
       ))}
     </Fragment>
